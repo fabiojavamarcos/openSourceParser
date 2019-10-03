@@ -29,8 +29,13 @@ import util.MapUtil;
 public class OSSParser {
 
 	private Map <String, Integer> dictionary = new HashMap();
+	private Map <String, String> complements = new HashMap();
 	private List sources = new ArrayList();
 	private List dirs = new ArrayList();
+	private List<String> reservedWords = new ArrayList<String>();
+	private OutputStream os = null;
+	private OutputStreamWriter osw = null; 
+    private BufferedWriter bw = null; 
 	
 	public OSSParser(String[] args) {
 		// TODO Auto-generated constructor stub
@@ -43,6 +48,9 @@ public class OSSParser {
 		
 			dirTrab=args[0];
 			format = args[1];
+			for (int i=2; i<args.length; i++){
+				reservedWords.add(args[i]);
+			}
 			
 		}
 		
@@ -56,22 +64,44 @@ public class OSSParser {
 		}
 		*/
 		dirs.add(dirTrab);
+		
+		try {
+			os = new FileOutputStream("/Users/fabiomarcosdeabreusantos/Documents/JabRefImports.csv");
+			osw = new OutputStreamWriter(os);
+			bw = new BufferedWriter(osw);
+	    	bw.write("File,Word,Complement \n");
+
+		} catch (FileNotFoundException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		
+		System.out.println("Starting----------------");			
+		
 		for (int i=0; i<dirs.size(); i++) {
 			processDir(dirs.get(i));	
 		}
-		
-		printDictionary();	    
-	   
+		try {
+			bw.close();
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		printDictionary(dictionary, "dict");	    
+		printDictionary(complements, "complement");
 	    
 	}
 
 
-	private void printDictionary() {
+	private void printDictionary(Map dict, String label) {
 		// TODO Auto-generated method stub
 		//Map<String, Integer> treeMap = new TreeMap<String, Integer>(dictionary);
-		Map sortedMap = MapUtil.sortByValue(dictionary);
+		Map sortedMap = MapUtil.sortByValue(dict);
 		
-		sortedMap.forEach((k,v)->System.out.println("keyword : " + k + " # : " + v));
+		sortedMap.forEach((k,v)->System.out.println(label + k + " # : " + v));
 	}
 
 
@@ -97,8 +127,6 @@ public class OSSParser {
 		        	if (!isNew) {
 		        		System.out.println("Alinhamento igual:"+ listOfFiles[i].getName());
 		        		alinhamentosDuplicate.add(alignment);
-			        	
-		        		
 		        	}
 		        	
 		        	boolean found = false;
@@ -119,13 +147,10 @@ public class OSSParser {
 		        dirs.add(listOfFiles[i].getAbsolutePath());
 		    }
 	    }
-
 	}
-
 
 	private String processFile(File selectedFile) {
 		// TODO Auto-generated method stub
-		
 
 	    System.out.println("Arquivo da vez - "+selectedFile.getName());
 	    
@@ -139,41 +164,68 @@ public class OSSParser {
 			}
 		    InputStreamReader isr = new InputStreamReader(is);
 		    BufferedReader br = new BufferedReader(isr);
+		    
 		    String s = ""; 
 		    String token = null;
 		    StringTokenizer stk = null;
 		    int pos = 0;
 			try {
+
 				//Stream st = br.lines(); 
 				//st.
 				System.out.println("leitura do java "+selectedFile.getName());
 				s = br.readLine();// primeira linha do arquivo
 				
-				System.out.println(s);
+				//System.out.println(s);
 				while (s != null) {
 					
 					int length = s.length();
 					String word = null;
-					
+					String complement = null;
 					//token = stk.nextToken();
-					pos = s.indexOf(" ");
-					int i = 0;
-					while (i<s.length()&&pos!=-1) {
+					if (reservedWords.size()==0){
+						pos = s.indexOf(" ");
+						int i = 0;
+						while (i<s.length()&&pos!=-1) {
+							
+							word = s.substring(i, pos);
+							
+							insertDictonary(word, dictionary);
+							
+							i = pos;
+							pos = s.indexOf(" ", pos+1);
+							
+						}
+						if (i+1<s.length()) {
+							word = s.substring(i+1, s.length()-1);
+							insertDictonary(word, dictionary);
+						}
+					} else {
+						pos = s.indexOf(reservedWords.get(0));
+						int i = 0;
+						if (pos!=-1) {
+							
+							word = reservedWords.get(0);
+							
+							//insertComplement(word, complement, complements);
+							
+							i = pos+word.length();
+							
+							if (i+1<s.length()-1){
+								complement = s.substring(i+1, s.length()-1);
+								if (testComplement(complement)){
+									insertComplement(word, complement, complements);
+									System.out.println(word+" "+complement);
+									bw.write(selectedFile.getName()+","+word+","+complement+"\n");
+								}
+							}
+							
+						}
 						
-						word = s.substring(i, pos);
-						insertDictonary(word);
-						i = pos;
-						pos = s.indexOf(" ", pos+1);
-						
-					}
-					if (i+1<s.length()) {
-						word = s.substring(i+1, s.length()-1);
-						insertDictonary(word);
 					}
 					s = br.readLine();
-					System.out.println(s);
-				}
-				    
+					//System.out.println(s);
+				}	    
 				
 					
 			} catch (IOException e) {
@@ -189,21 +241,48 @@ public class OSSParser {
 	}
 
 
-	private void insertDictonary(String word) {
+	private boolean testComplement(String complement) {
+		// TODO Auto-generated method stub
+		if (complement.indexOf(")")!=-1)
+			return false;
+		if (complement.indexOf("(")!=-1)
+			return false;
+		if (complement.indexOf("=")!=-1)
+			return false;
+		if (complement.indexOf(",")!=-1)
+			return false;
+		if (complement.indexOf(".")==-1)
+			return false;
+		return true;
+	}
+
+
+	private void insertDictonary(String word, Map dict) {
 		// TODO Auto-generated method stub
 		word = word.trim();
 		if (word.lastIndexOf(";")!=-1) {
 			word = word.substring(0,word.length()-1);
 		}
-		if (dictionary.containsKey(word)) {
-			Integer value = dictionary.get(word);
+		if (dict.containsKey(word)) {
+			Integer value = (Integer) dict.get(word);
 			value ++;
-			dictionary.remove(word);
-			dictionary.put(word, value);
+			dict.remove(word);
+			dict.put(word, value);
 			
 		} else {
-			dictionary.put(word, 1);
+			dict.put(word, 1);
 		}
+	}
+	
+	private void insertComplement(String word, String complement, Map dict) {
+		// TODO Auto-generated method stub
+		word = word.trim();
+		if (word.lastIndexOf(";")!=-1) {
+			word = word.substring(0,word.length()-1);
+		}
+		
+		dict.put(word, complement);
+		
 	}
 
 }
