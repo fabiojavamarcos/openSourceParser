@@ -36,6 +36,7 @@ public class OSSParser {
 	private OutputStream os = null;
 	private OutputStreamWriter osw = null; 
     private BufferedWriter bw = null; 
+    private List<String> counts = new ArrayList();  
 	
 	public OSSParser(String[] args) {
 		// TODO Auto-generated constructor stub
@@ -92,7 +93,29 @@ public class OSSParser {
 		}
 		printDictionary(dictionary, "dict");	    
 		printDictionary(complements, "complement");
+		printCounts();
 	    
+	}
+
+
+	private void printCounts() {
+		// TODO Auto-generated method stub
+		try {
+			os = new FileOutputStream("/Users/fabiomarcosdeabreusantos/Documents/JabRefCounts.csv");
+			osw = new OutputStreamWriter(os);
+			bw = new BufferedWriter(osw);
+	    	bw.write("File,FullName,Class,RefCount \n");
+	    	for (String line: counts){
+	    		bw.write(line);
+	    	}
+	    	bw.close();
+		} catch (FileNotFoundException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
 	}
 
 
@@ -120,6 +143,7 @@ public class OSSParser {
 		        System.out.println("File " + listOfFiles[i].getName());
 		        files.add(listOfFiles[i]);
 		        source = processFile(listOfFiles[i]);
+		        
 		        sources.add(source);
 		        boolean isNew;
 		        if (sources!=null) {
@@ -151,7 +175,7 @@ public class OSSParser {
 
 	private String processFile(File selectedFile) {
 		// TODO Auto-generated method stub
-
+		ArrayList<String> newComplements = new ArrayList();
 	    System.out.println("Arquivo da vez - "+selectedFile.getName());
 	    
 		if (selectedFile.getName().endsWith("java")){
@@ -168,6 +192,7 @@ public class OSSParser {
 		    String s = ""; 
 		    String token = null;
 		    StringTokenizer stk = null;
+		    String source = null;
 		    int pos = 0;
 			try {
 
@@ -175,7 +200,7 @@ public class OSSParser {
 				//st.
 				System.out.println("leitura do java "+selectedFile.getName());
 				s = br.readLine();// primeira linha do arquivo
-				
+				source = s;
 				//System.out.println(s);
 				while (s != null) {
 					
@@ -216,6 +241,7 @@ public class OSSParser {
 								if (testComplement(complement)){
 									insertComplement(word, complement, complements);
 									System.out.println(word+" "+complement);
+									newComplements.add(complement);
 									bw.write(selectedFile.getName()+","+word+","+complement+"\n");
 								}
 							}
@@ -224,6 +250,7 @@ public class OSSParser {
 						
 					}
 					s = br.readLine();
+					source = source + s;
 					//System.out.println(s);
 				}	    
 				
@@ -235,7 +262,48 @@ public class OSSParser {
 				en.printStackTrace();
 			
 			}
-			return s;
+			countComplements(selectedFile.getName(), source, newComplements);
+			return source;
+		}
+		return null;
+	}
+
+
+	private void countComplements(String name, String source, ArrayList<String> newComplements) {
+		// TODO Auto-generated method stub
+		
+		for (String unit: newComplements){
+			int countSearch = 0;
+			unit = unit.trim();
+			if (unit.lastIndexOf(".")!=-1) {
+				String searchUnit = getSearchUnit(unit);
+				if (searchUnit!=null){
+					int pos = 0;
+					pos = source.indexOf(searchUnit);
+					while (pos!=-1){
+						countSearch++;
+						pos = source.indexOf(searchUnit,pos+1);
+					}
+					counts.add(name+","+unit+","+searchUnit+","+countSearch+"\n");
+				}
+			} 
+			
+			
+		}
+	}
+
+
+	private String getSearchUnit(String unit) {
+		// TODO Auto-generated method stub
+		int dotPos = unit.lastIndexOf(".")+1;
+		String searchUnit = unit.substring(dotPos,unit.length());
+		Character c = searchUnit.charAt(0);
+		if (!Character.isUpperCase(c)){
+			String newUnit = unit.substring(0, dotPos-1);
+			searchUnit = unit.substring(newUnit.lastIndexOf(".")+1, newUnit.length());
+		}
+		if (searchUnit!=null&&searchUnit.length()>2){
+			return searchUnit;
 		}
 		return null;
 	}
