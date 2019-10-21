@@ -23,6 +23,9 @@ import java.util.TreeMap;
 
 import javax.swing.GroupLayout.Alignment;
 
+import DAO.FileDAO;
+import model.API;
+import model.UnitComp;
 import util.MapUtil;
 
 
@@ -37,24 +40,54 @@ public class OSSParser {
 	private OutputStreamWriter osw = null; 
     private BufferedWriter bw = null; 
     private List<String> counts = new ArrayList();  
+    private FileDAO fd; 
+	private String dirTrab = System.getProperty("user.dir");
+	private String format = "java";
+	private String db = "Y";
+	private String csv ="Y";
+	private String dbConnect = "dev";
+	private String user = "postgres";
+	private String pswd = "admin";
+	private String project = "jabref";
 	
 	public OSSParser(String[] args) {
 		// TODO Auto-generated constructor stub
+		/*List of parameters:
+		dirTrab ex: /Users/fabiomarcosdeabreusantos/Documents/dev/github/jabref/src
+		format ex: java
+		save in db ex: Y
+		save in csv ex: Y
+		db name to save ex: dev
+		db user ex: postgres
+		db password ex: admin
+		project name ex: jabref
+		list of reserved words to search (blank separeted) ex: import
+		*/
+		dirTrab=args[0];
+		format = args[1];
+		db = args[2];
+		csv = args[3];
+		dbConnect = args[4];
+		user = args[5];
+		pswd = args[6];
+		project = args[7];
 		
-		String dirTrab = System.getProperty("user.dir");
-		String format = "java";
-		if (args.length==0) {
-			dirTrab = System.getProperty("user.dir");
-		} else {
-		
-			dirTrab=args[0];
-			format = args[1];
-			for (int i=2; i<args.length; i++){
-				reservedWords.add(args[i]);
-			}
-			
+		System.out.println("Starting with following parameters:");
+		System.out.println("-----------------------------------");
+		System.out.println("Dir Trab: " + dirTrab);
+		System.out.println("Language: " + format);
+		System.out.println("Generate DB: " + db);
+		System.out.println("Generate CSV: " + csv);
+		if (args[8]==null){
+			System.out.println("Generating a dictionary ");
+		}
+		for (int i=8; i<args.length; i++){
+			reservedWords.add(args[i]);
+			System.out.println("Looking for: " + args[i]);
 		}
 		
+		System.out.println("-----------------------------------");
+	
 		//JFileChooser fileChooser = new JFileChooser();
 		//fileChooser.setCurrentDirectory(new File(System.getProperty("user.home")));
 		//File selectedFile = new File("C:\\\\temp\\\\ALIN-cmt-confOf.rdf");
@@ -65,9 +98,11 @@ public class OSSParser {
 		}
 		*/
 		dirs.add(dirTrab);
+		fd = FileDAO.getInstancia(dbConnect, user, pswd);
 		
+		fd.insertProject(project, dirTrab, format);
 		try {
-			os = new FileOutputStream("/Users/fabiomarcosdeabreusantos/Documents/JabRefImports.csv");
+			os = new FileOutputStream(dirTrab + "JabRefImports.csv");
 			osw = new OutputStreamWriter(os);
 			bw = new BufferedWriter(osw);
 	    	bw.write("File,Word,Complement \n");
@@ -91,15 +126,20 @@ public class OSSParser {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
-		printDictionary(dictionary, "dict");	    
-		printDictionary(complements, "complement");
-		printCounts();
+		
+		if (csv.equals("Y"))
+			printCounts();
+		else {
+			printDictionary(dictionary, "dict");	    
+			printDictionary(complements, "complement");
+		}
 	    
 	}
 
 
 	private void printCounts() {
 		// TODO Auto-generated method stub
+		
 		try {
 			os = new FileOutputStream("/Users/fabiomarcosdeabreusantos/Documents/JabRefCounts.csv");
 			osw = new OutputStreamWriter(os);
@@ -116,6 +156,7 @@ public class OSSParser {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
+
 	}
 
 
@@ -142,7 +183,7 @@ public class OSSParser {
 	    	if (listOfFiles[i].isFile()) {
 		        System.out.println("File " + listOfFiles[i].getName());
 		        files.add(listOfFiles[i]);
-		        source = processFile(listOfFiles[i]);
+		        source = processFile(listOfFiles[i], dir);
 		        
 		        sources.add(source);
 		        boolean isNew;
@@ -173,12 +214,12 @@ public class OSSParser {
 	    }
 	}
 
-	private String processFile(File selectedFile) {
+	private String processFile(File selectedFile, String dir) {
 		// TODO Auto-generated method stub
 		ArrayList<String> newComplements = new ArrayList();
 	    System.out.println("Arquivo da vez - "+selectedFile.getName());
 	    
-		if (selectedFile.getName().endsWith("java")){
+		if (selectedFile.getName().endsWith(format)){
 			InputStream is = null;
 			try {
 				is = new FileInputStream(selectedFile);
@@ -198,7 +239,11 @@ public class OSSParser {
 
 				//Stream st = br.lines(); 
 				//st.
-				System.out.println("leitura do java "+selectedFile.getName());
+				System.out.println("leitura do file "+selectedFile.getName()+ "dir: "+dir);
+				UnitComp uc = new UnitComp();
+				uc.setName(selectedFile.getName());
+				uc.setDir(dir);
+				fd.insertFile(uc, project);
 				s = br.readLine();// primeira linha do arquivo
 				source = s;
 				//System.out.println(s);
@@ -209,6 +254,7 @@ public class OSSParser {
 					String complement = null;
 					//token = stk.nextToken();
 					if (reservedWords.size()==0){
+						// generating a dictionaty only
 						pos = s.indexOf(" ");
 						int i = 0;
 						while (i<s.length()&&pos!=-1) {
@@ -226,6 +272,7 @@ public class OSSParser {
 							insertDictonary(word, dictionary);
 						}
 					} else {
+						// parsing reserved words...
 						pos = s.indexOf(reservedWords.get(0));
 						int i = 0;
 						if (pos!=-1) {
@@ -239,10 +286,21 @@ public class OSSParser {
 							if (i+1<s.length()-1){
 								complement = s.substring(i+1, s.length()-1);
 								if (testComplement(complement)){
-									insertComplement(word, complement, complements);
+									insertComplement(selectedFile.getName(), word, complement, complements);
 									System.out.println(word+" "+complement);
 									newComplements.add(complement);
-									bw.write(selectedFile.getName()+","+word+","+complement+"\n");
+									if (csv.equals("Y")){
+										bw.write(selectedFile.getName()+","+word+","+complement+"\n");
+									}
+									if (db.equals("Y")){
+										API api = new API();
+										api.setFullName(complement);
+										
+										String searchString = this.getSearchUnit(complement);
+										api.setClassName(searchString);
+										fd.insertAPI(api);
+										fd.insertFileAPI(uc, api);
+									}
 								}
 							}
 							
@@ -262,7 +320,9 @@ public class OSSParser {
 				en.printStackTrace();
 			
 			}
+			
 			countComplements(selectedFile.getName(), source, newComplements);
+			
 			return source;
 		}
 		return null;
@@ -285,6 +345,13 @@ public class OSSParser {
 						pos = source.indexOf(searchUnit,pos+1);
 					}
 					counts.add(name+","+unit+","+searchUnit+","+countSearch+"\n");
+					if (db.equals("Y")){
+						API api = new API();
+						api.setFullName(unit);
+						UnitComp uc = new UnitComp();
+						uc.setName(name);
+						fd.updateFileAPICount(uc, api, countSearch);
+					}
 				}
 			} 
 			
@@ -342,14 +409,14 @@ public class OSSParser {
 		}
 	}
 	
-	private void insertComplement(String word, String complement, Map dict) {
+	private void insertComplement(String fileName, String word, String complement,  Map dict) {
 		// TODO Auto-generated method stub
 		word = word.trim();
 		if (word.lastIndexOf(";")!=-1) {
 			word = word.substring(0,word.length()-1);
 		}
 		
-		dict.put(word, complement);
+		dict.put(fileName + "-" + word + "-" + complement, complement);
 		
 	}
 
