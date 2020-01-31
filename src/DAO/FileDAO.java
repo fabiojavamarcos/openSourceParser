@@ -51,77 +51,85 @@ public class FileDAO {
 		
 	}
 	
-	public void insertFile(UnitComp uc, String project){
+	public String insertFile(UnitComp uc, String project){
 		Connection con = DBUtil.getConnection(dbcon, user, pswd);
 		
 		try {
 			Statement comandoSql = con.createStatement();
 			
-			String sql = "insert into file values ('"+uc.getName()+"','"+uc.getDir()+"','"+project+"')";
+			String sql = "insert into file values ('"+uc.getName()+"','"+uc.getDir()+uc.getName()+"','"+project+"')";
 			System.out.println(sql);
 			
 			comandoSql.executeUpdate(sql);
+			return sql;
 			
 		} catch (SQLException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
+			return "Duplicate File"+ uc.getName()+" - "+uc.getDir()+" - "+project+ e.getMessage();
 		}
 		
 	}
-	public void insertAPI(API api){
+	public String insertAPI(API api){
 		Connection con = DBUtil.getConnection(dbcon, user, pswd);
 		
 		try {
 			Statement comandoSql = con.createStatement();
 			
-			String sql = "insert into \"API\" values ('"+api.getClassName()+"','"+api.getFullName()+"')";
+			String sql = "insert into \"API\" values ('"+api.getFullName()+"','"+api.getClassName()+"')";
 			System.out.println(sql);
 			
 			comandoSql.executeUpdate(sql);
+			return sql;
 			
 		} catch (SQLException e) {
 			// TODO Auto-generated catch block
 			
 			System.out.println("API duplicate:"+api.getFullName()+"- "+ e.getMessage());
+			return "API duplicate:"+api.getFullName()+"- "+ e.getMessage();
 		}
 		
 	}
-	public void insertFileAPI(UnitComp uc, API api){
+	public String insertFileAPI(UnitComp uc, API api){
 		Connection con = DBUtil.getConnection(dbcon, user, pswd);
 		
 		try {
 			Statement comandoSql = con.createStatement();
 			
-			String sql = "insert into \"file_API\" values ('"+uc.getName()+"','"+api.getFullName()+"')";
+			String sql = "insert into \"file_API\" values ('"+uc.getDir()+uc.getName()+"','"+api.getFullName()+"')";
 			System.out.println(sql);
 			
 			comandoSql.executeUpdate(sql);
+			return sql;
 			
 		} catch (SQLException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
+			return "Duplicate File_API "+uc.getName()+"','"+api.getFullName()+e.getMessage();
 		}
 		
 	}
-	public void updateFileAPICount(UnitComp uc, API api, int count){
+	public String updateFileAPICount(UnitComp uc, API api, int count){
 		Connection con = DBUtil.getConnection(dbcon, user, pswd);
 		
 		try {
 			Statement comandoSql = con.createStatement();
 			
-			String sql = "update \"file_API\" set count = "+count+" where api_name = '"+api.getFullName()+"' and file_name = '"+uc.getName()+"'";
+			String sql = "update \"file_API\" set count = "+count+" where api_name = '"+api.getFullName()+"' and file_name = '"+uc.getDir()+uc.getName()+"'";
 			System.out.println(sql);
 			
 			comandoSql.executeUpdate(sql);
+			return sql;
 			
 		} catch (SQLException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
+			return "Error Updating count: "+ count + " - " + api.getFullName()+ " - " + uc.getName();
 		}
 		
 	}
 
-	public void insertProject(String project, String dirTrab, String format) {
+	public String insertProject(String project, String dirTrab, String format) {
 		// TODO Auto-generated method stub
 		Connection con = DBUtil.getConnection(dbcon, user, pswd);
 		
@@ -132,10 +140,12 @@ public class FileDAO {
 			System.out.println(sql);
 			
 			comandoSql.executeUpdate(sql);
+			return sql;
 			
 		} catch (SQLException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
+			return "Duplicate project "+project+" - "+dirTrab+" - "+format+e.getMessage();
 		}
 	}
 
