@@ -60,6 +60,20 @@ public class OSSParser {
 		project name ex: jabref
 		list of reserved words to search (blank separeted) ex: import
 		*/
+		/* arguments example
+	 	/Users/fd252/Documents/dev/jabref-5.0-alpha
+		java
+		N
+		Y
+		devaugust2020
+		postgres
+		admin
+		jabref50
+		import
+		N
+		/Users/fd252/Documents/Cursos3/NAU/Research/R/mergedClosedCommit/authorFilePatch.csv
+		 */
+
 		dirTrab=args[0];
 		format = args[1];
 		db = args[2];
