@@ -96,7 +96,7 @@ public class FileDAO {
 		try {
 			Statement comandoSql = con.createStatement();
 			
-			String sql = "insert into \"file_API\" values ('"+uc.getDir()+uc.getName()+"','"+api.getFullName()+"')";
+			String sql = "insert into \"file_API\" values ('"+uc.getDir()+"/"+uc.getName()+"','"+api.getFullName()+"')";
 			System.out.println(sql);
 			
 			comandoSql.executeUpdate(sql);
