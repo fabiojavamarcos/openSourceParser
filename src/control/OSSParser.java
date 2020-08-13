@@ -344,6 +344,9 @@ public class OSSParser {
 								if (testComplement(complement)){
 									insertComplement(selectedFile.getName(), word, complement, complements);
 									System.out.println(word+" "+complement);
+									if (complement.startsWith("static ")) {
+										complement = complement.replace("static ","");
+									}
 									newComplements.add(complement);
 									if (csv.equals("Y")){
 										bw.write(selectedFile.getName()+","+word+","+complement+"\n");
