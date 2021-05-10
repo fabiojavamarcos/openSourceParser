@@ -124,7 +124,7 @@ public class OSSParser {
 		
 		log += fd.insertProject(project, dirTrab, format);
 		try {
-			os = new FileOutputStream(dirTrab + " Imports.csv");
+			os = new FileOutputStream(dirTrab + "JabRefImports.csv");
 			osw = new OutputStreamWriter(os);
 			bw = new BufferedWriter(osw);
 	    	bw.write("File,Word,Complement \n");
