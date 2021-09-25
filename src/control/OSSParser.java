@@ -99,14 +99,14 @@ public class OSSParser {
 			System.out.println("Looking for: " + args[i]);
 		}
 		
-		userSkills = args[9];
-		if (args[9].equals("N")){
-			System.out.println("Parsing Project ");
-		}
-		else {
-			System.out.println("Parsing User File");
-			parseUserFile(args[10]);
-		}
+//		userSkills = args[9];
+//		if (args[9].equals("N")){
+//			System.out.println("Parsing Project ");
+//		}
+//		else {
+//			System.out.println("Parsing User File");
+//			parseUserFile(args[10]);
+//		}
 		
 		System.out.println("-----------------------------------");
 	
@@ -295,7 +295,7 @@ public class OSSParser {
 
 				//Stream st = br.lines(); 
 				//st.
-				System.out.println("leitura do file "+selectedFile.getName()+ "dir: "+dir);
+				System.out.println("leitura do file "+selectedFile.getName()+ " dir: "+dir);
 				UnitComp uc = new UnitComp();
 				uc.setName(selectedFile.getName());
 				uc.setDir(dir);
@@ -340,8 +340,23 @@ public class OSSParser {
 							i = pos+word.length();
 							
 							if (i+1<s.length()-1){
-								complement = s.substring(i+1, s.length()-1); // change to s.length()?
+								if (format.equals("java"))
+									complement = s.substring(i+1, s.length()-1); // change to s.length()?
+								if (format.equals("cpp")||format.equals("h")) {
+									complement = s.substring(i+1, s.length());
+								    int tag = complement.lastIndexOf(">");
+								    if (tag != -1) {
+								    	complement = complement.substring(0, tag);
+								    } else {
+								    	complement = complement.substring(0, complement.length());
+								    }
+									complement = complement.replaceAll("\"","");
+									complement = complement.replaceAll("<","");
+									complement = complement.replaceAll(">","");
+
+								}
 								if (testComplement(complement)){
+
 									insertComplement(selectedFile.getName(), word, complement, complements);
 									System.out.println(word+" "+complement);
 									if (complement.startsWith("static ")) {
@@ -355,7 +370,15 @@ public class OSSParser {
 										API api = new API();
 										api.setFullName(complement); // add "\"?
 										
-										String searchString = this.getSearchUnit(complement);
+										String searchString = "";
+										if (format.equals("java"))
+											searchString = this.getSearchUnit(complement);
+										if (format.equals("cpp")||format.equals("h"))
+											searchString = this.getSearchUnitCpp(complement);
+										
+										searchString = searchString.replaceAll("<","");
+										searchString = searchString.trim();
+
 										api.setClassName(searchString);
 										log += fd.insertAPI(api);
 										log += fd.insertFileAPI(uc, api);
@@ -388,33 +411,36 @@ public class OSSParser {
 	}
 
 
+
 	private void countComplements(String name, String source, ArrayList<String> newComplements) {
 		// TODO Auto-generated method stub
 		
-		for (String unit: newComplements){
-			int countSearch = 0;
-			unit = unit.trim();
-			if (unit.lastIndexOf(".")!=-1) {
-				String searchUnit = getSearchUnit(unit);
-				if (searchUnit!=null){
-					int pos = 0;
-					pos = source.indexOf(searchUnit);
-					while (pos!=-1){
-						countSearch++;
-						pos = source.indexOf(searchUnit,pos+1);
+		if (format.equals("java")) {
+			for (String unit: newComplements){
+				int countSearch = 0;
+				unit = unit.trim();
+				if (unit.lastIndexOf(".")!=-1) {
+					String searchUnit = getSearchUnit(unit);
+					if (searchUnit!=null){
+						int pos = 0;
+						pos = source.indexOf(searchUnit);
+						while (pos!=-1){
+							countSearch++;
+							pos = source.indexOf(searchUnit,pos+1);
+						}
+						counts.add(name+","+unit+","+searchUnit+","+countSearch+"\n");
+						if (db.equals("Y")){
+							API api = new API();
+							api.setFullName(unit);
+							UnitComp uc = new UnitComp();
+							uc.setName(name);
+							log += fd.updateFileAPICount(uc, api, countSearch);
+						}
 					}
-					counts.add(name+","+unit+","+searchUnit+","+countSearch+"\n");
-					if (db.equals("Y")){
-						API api = new API();
-						api.setFullName(unit);
-						UnitComp uc = new UnitComp();
-						uc.setName(name);
-						log += fd.updateFileAPICount(uc, api, countSearch);
-					}
-				}
-			} 
-			
-			
+				} 
+				
+				
+			}
 		}
 	}
 
@@ -434,20 +460,48 @@ public class OSSParser {
 		return null;
 	}
 
+	private String getSearchUnitCpp(String unit) {
+		// TODO Auto-generated method stub
+		int ltPos = unit.lastIndexOf('/')+1;
+		int gtPos = unit.lastIndexOf(">")+1;
+		
+		String searchUnit = "";
+		if (ltPos == 0)
+			if (gtPos == 0)
+				searchUnit = unit;
+			else
+				searchUnit = unit.substring(ltPos,gtPos);
+		else
+			if (gtPos == 0)
+				searchUnit = unit.substring(ltPos,unit.length());
+			else
+				searchUnit = unit.substring(ltPos,gtPos);
+
+		if (searchUnit!=null){
+			return searchUnit;
+		}
+		return null;
+	}
+
 
 	private boolean testComplement(String complement) {
 		// TODO Auto-generated method stub
-		if (complement.indexOf(")")!=-1)
-			return false;
-		if (complement.indexOf("(")!=-1)
-			return false;
-		if (complement.indexOf("=")!=-1)
-			return false;
-		if (complement.indexOf(",")!=-1)
-			return false;
-		if (complement.indexOf(".")==-1)
-			return false;
+		if (format.equals("java")){
+
+			if (complement.indexOf(")")!=-1)
+				return false;
+			if (complement.indexOf("(")!=-1)
+				return false;
+			if (complement.indexOf("=")!=-1)
+				return false;
+			if (complement.indexOf(",")!=-1)
+				return false;
+			if (complement.indexOf(".")==-1)
+				return false;
+			return true;
+		}
 		return true;
+
 	}
 
 
