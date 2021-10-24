@@ -34,6 +34,16 @@ public class OSSParser {
 	private OutputStream os = null;
 	private OutputStreamWriter osw = null; 
     private BufferedWriter bw = null; 
+	private OutputStream osf = null;
+	private OutputStreamWriter oswf = null; 
+    private BufferedWriter bwf = null; 
+	private OutputStream osa = null;
+	private OutputStreamWriter oswa = null; 
+    private BufferedWriter bwa = null; 
+	private OutputStream osfa = null;
+	private OutputStreamWriter oswfa = null; 
+    private BufferedWriter bwfa = null; 
+
     private List<String> counts = new ArrayList();  
     private FileDAO fd; 
 	private String dirTrab = System.getProperty("user.dir");
@@ -46,21 +56,24 @@ public class OSSParser {
 	private String project = "jabref";
 	private String userSkills = "N";
 	private String log = " ";
+	private String outDir = " ";
 	
 	public OSSParser(String[] args) {
 		// TODO Auto-generated constructor stub
 		/*List of parameters:
-		dirTrab ex: /Users/fabiomarcosdeabreusantos/Documents/dev/github/jabref/src
-		format ex: java
-		save in db ex: Y
-		save in csv ex: Y
-		db name to save ex: dev
-		db user ex: postgres
-		db password ex: admin
-		project name ex: jabref
-		list of reserved words to search (blank separeted) ex: import
+		0: dirTrab ex: /Users/fabiomarcosdeabreusantos/Documents/dev/github/jabref/src
+		1: format ex: java
+		2: save in db ex: Y
+		3: save in csv ex: Y
+		4: db name to save ex: dev
+		5: db user ex: postgres
+		6: db password ex: admin
+		7: project name ex: jabref
+		8: outdir (csv) ex: private String log = " ";
+		9: list of reserved words to search (blank separeted) ex: import
 		*/
-		/* arguments example
+		/* arguments example java
+		 * 
 	 	/Users/fd252/Documents/dev/jabref-5.0-alpha
 		java
 		N
@@ -69,10 +82,27 @@ public class OSSParser {
 		postgres
 		admin
 		jabref50
+		/Users/fd252/Documents/Cursos3/NAU/Research/JabRef/
 		import
+		
+		arguments example cpp (h files)
+		
+		"/Volumes/GoogleDrive/My Drive/dev/audacity-master"
+		h
 		N
-		/Users/fd252/Documents/Cursos3/NAU/Research/R/mergedClosedCommit/authorFilePatch.csv
-		 */
+		Y
+		teste
+		postgres
+		admin
+		audacity
+		/Users/fd252/OneDrive/Production/ETL1-Pipeline-main/data/outputs/new/audacity/
+		#include
+		
+		Using the jar:
+		
+		java -jar OSSParser.jar "/Volumes/GoogleDrive/My Drive/dev/audacity-master" h N Y teste postgresql admin audacity /Users/fd252/OneDrive/Production/ETL1-Pipeline-main/data/outputs/new/audacity/ #include
+
+		 **/
 
 		dirTrab=args[0];
 		format = args[1];
@@ -82,7 +112,7 @@ public class OSSParser {
 		user = args[5];
 		pswd = args[6];
 		project = args[7];
-		
+		outDir = args[8];
 		
 		System.out.println("Starting with following parameters:");
 		System.out.println("-----------------------------------");
@@ -91,10 +121,10 @@ public class OSSParser {
 		System.out.println("Generate DB: " + db);
 		System.out.println("Generate CSV: " + csv);
 		
-		if (args[8]==null){
+		if (args[9]==null){
 			System.out.println("Generating a dictionary ");
 		}
-		for (int i=8; i<args.length; i++){
+		for (int i=9; i<args.length; i++){
 			reservedWords.add(args[i]);
 			System.out.println("Looking for: " + args[i]);
 		}
@@ -120,14 +150,37 @@ public class OSSParser {
 		}
 		*/
 		dirs.add(dirTrab);
-		fd = FileDAO.getInstancia(dbConnect, user, pswd);
-		
-		log += fd.insertProject(project, dirTrab, format);
+		if (db.equals("Y")) {
+
+			fd = FileDAO.getInstancia(dbConnect, user, pswd);
+			log += fd.insertProject(project, dirTrab, format);
+		}
 		try {
 			os = new FileOutputStream(dirTrab + "JabRefImports.csv");
 			osw = new OutputStreamWriter(os);
 			bw = new BufferedWriter(osw);
 	    	bw.write("File,Word,Complement \n");
+	    	
+	    	if (csv.equals("Y" )){
+	    		
+    			osf = new FileOutputStream(outDir+project+"_file.csv");
+    			osa = new FileOutputStream(outDir+project+"_api.csv");
+    			osfa = new FileOutputStream(outDir+project+"_fileapi.csv");
+    			System.out.println("Writing " + outDir+project+"_file.csv");
+    			System.out.println("Writing " + outDir+project+"_api.csv");
+    			System.out.println("Writing " + outDir+project+"_fileapi.csv");
+
+    			oswf = new OutputStreamWriter(osf);
+    			oswa= new OutputStreamWriter(osa);
+    			oswfa = new OutputStreamWriter(osfa);
+    			bwf = new BufferedWriter(oswf);
+    			bwa = new BufferedWriter(oswa);
+    			bwfa = new BufferedWriter(oswfa);
+
+    			bwf.write("file_name,full_name,project \n");
+    			bwa.write("api_name,class,count,expert \n");
+    			bwfa.write("file_name,api_name,count \n");
+	    	}
 
 		} catch (FileNotFoundException e) {
 			// TODO Auto-generated catch block
@@ -144,6 +197,9 @@ public class OSSParser {
 		}
 		try {
 			bw.close();
+			bwa.close();
+			bwf.close();
+			bwfa.close();
 		} catch (IOException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
@@ -157,6 +213,8 @@ public class OSSParser {
 		}
 		
 		writeLog(log);
+		System.out.println("Finished----------------");			
+
 	    
 	}
 
@@ -299,7 +357,15 @@ public class OSSParser {
 				UnitComp uc = new UnitComp();
 				uc.setName(selectedFile.getName());
 				uc.setDir(dir);
-				log += fd.insertFile(uc, project);
+				if (db.equals("Y")){
+				
+					log += fd.insertFile(uc, project);
+				}
+				if (csv.equals("Y")){
+
+					bwf.write(uc.getName()+","+uc.getDir()+"/"+uc.getName()+","+project+"\n");
+				}
+
 				s = br.readLine();// primeira linha do arquivo
 				source = s;
 				//System.out.println(s);
@@ -358,31 +424,41 @@ public class OSSParser {
 								if (testComplement(complement)){
 
 									insertComplement(selectedFile.getName(), word, complement, complements);
-									System.out.println(word+" "+complement);
+									System.out.println("processing:"+word+" "+complement);
+
+									if (complement.equals("r.actions")) {
+										System.out.println("debug:"+word+" "+complement);
+
+										
+									}
 									if (complement.startsWith("static ")) {
 										complement = complement.replace("static ","");
 									}
 									newComplements.add(complement);
-									if (csv.equals("Y")){
-										bw.write(selectedFile.getName()+","+word+","+complement+"\n");
-									}
-									if (db.equals("Y")){
-										API api = new API();
-										api.setFullName(complement); // add "\"?
-										
-										String searchString = "";
-										if (format.equals("java"))
-											searchString = this.getSearchUnit(complement);
-										if (format.equals("cpp")||format.equals("h"))
-											searchString = this.getSearchUnitCpp(complement);
-										
-										searchString = searchString.replaceAll("<","");
-										searchString = searchString.trim();
+									API api = new API();
+									api.setFullName(complement); // add "\"?
+									
+									String searchString = "";
+									if (format.equals("java"))
+										searchString = this.getSearchUnit(complement);
+									if (format.equals("cpp")||format.equals("h"))
+										searchString = this.getSearchUnitCpp(complement);
+									
+									searchString = searchString.replaceAll("<","");
+									searchString = searchString.trim();
 
-										api.setClassName(searchString);
+									api.setClassName(searchString);
+									if (db.equals("Y")){
 										log += fd.insertAPI(api);
 										log += fd.insertFileAPI(uc, api);
 									}
+									if (csv.equals("Y")){
+										bw.write(selectedFile.getName()+","+word+","+complement+"\n");
+										bwa.write(api.getFullName()+","+api.getClassName()+",0, \n");
+										bwfa.write(uc.getDir()+"/"+uc.getName()+","+api.getFullName()+"\n");
+
+									}
+
 								}
 							}
 							
@@ -454,10 +530,10 @@ public class OSSParser {
 			String newUnit = unit.substring(0, dotPos-1);
 			searchUnit = unit.substring(newUnit.lastIndexOf(".")+1, newUnit.length());
 		}
-		if (searchUnit!=null&&searchUnit.length()>2){
+		if (searchUnit!=null&&searchUnit.length()>0){
 			return searchUnit;
 		}
-		return null;
+		return " "; //null?
 	}
 
 	private String getSearchUnitCpp(String unit) {
