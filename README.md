@@ -3,30 +3,38 @@ Parser to identify libraries in source code. Research project with a huge pipeli
 Works only with java.
 
 /*List of parameters:
-		dirTrab ex: /Users/fabiomarcosdeabreusantos/Documents/dev/github/jabref/src
-		format ex: java
-		save in db ex: Y
-		save in csv ex: Y
-		db name to save ex: dev
-		db user ex: postgres
-		db password ex: admin
-		project name ex: jabref
-		list of reserved words to search (blank separeted) ex: import
-    Parsing Project (N) or user file (Y)
-    user file name
-		*/
-		/* arguments example
-	 	/Users/fd252/Documents/dev/jabref-5.0-alpha
-		java
-		N
-		Y
-		devaugust2020
-		postgres
-		admin
-		jabref50
-		import
-		N
-		/Users/fd252/Documents/Cursos3/NAU/Research/R/mergedClosedCommit/authorFilePatch.csv
+		/*List of parameters:
+
+		0: dirTrab ex: /Users/fabiomarcosdeabreusantos/Documents/dev/github/jabref/src
+
+		1: format ex: java
+
+		2: save in db ex: N
+
+		3: save in csv ex: Y
+
+		4: db name to save ex: dev
+
+		5: db user ex: admin
+
+		6: db password ex: 123
+
+		7: project name ex: jabref
+
+		8: outdir (csv) ex: /Users/fabiomarcosdeabreusantos/Documents/dev/github/jabref/
+
+		9: list of reserved words to search (blank separated) ex:     import
+
 		 */
+
+
+
+
+
+Using the jar:
+
+
+java -jar OSSParser.jar "/Volumes/GoogleDrive/My Drive/dev/javrefVersions/jabref-5.0-alpha" java N Y teste admin 123 jabref50 "/Users/fd252/OneDrive/Production/ETL1-Pipeline-main/data/outputs/new/jabref/" "import"
+		
      
      
