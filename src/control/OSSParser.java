@@ -406,7 +406,7 @@ public class OSSParser {
 							i = pos+word.length();
 							
 							if (i+1<s.length()-1){
-								if (format.equals("java"))
+								if (format.equals("java")||format.equals("cs"))
 									complement = s.substring(i+1, s.length()-1); // change to s.length()?
 								if (format.equals("cpp")||format.equals("h")) {
 									complement = s.substring(i+1, s.length());
@@ -439,7 +439,7 @@ public class OSSParser {
 									api.setFullName(complement); // add "\"?
 									
 									String searchString = "";
-									if (format.equals("java"))
+									if (format.equals("java")||format.equals("cs"))
 										searchString = this.getSearchUnit(complement);
 									if (format.equals("cpp")||format.equals("h"))
 										searchString = this.getSearchUnitCpp(complement);
@@ -491,7 +491,7 @@ public class OSSParser {
 	private void countComplements(String name, String source, ArrayList<String> newComplements) {
 		// TODO Auto-generated method stub
 		
-		if (format.equals("java")) {
+		if (format.equals("java")||format.equals("cs")) {
 			for (String unit: newComplements){
 				int countSearch = 0;
 				unit = unit.trim();
@@ -562,7 +562,7 @@ public class OSSParser {
 
 	private boolean testComplement(String complement) {
 		// TODO Auto-generated method stub
-		if (format.equals("java")){
+		if (format.equals("java")||format.equals("cs")){
 
 			if (complement.indexOf(")")!=-1)
 				return false;
