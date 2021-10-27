@@ -197,9 +197,11 @@ public class OSSParser {
 		}
 		try {
 			bw.close();
-			bwa.close();
-			bwf.close();
-			bwfa.close();
+			if (csv.equals("Y" )){
+				bwa.close();
+				bwf.close();
+				bwfa.close();
+			}
 		} catch (IOException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
